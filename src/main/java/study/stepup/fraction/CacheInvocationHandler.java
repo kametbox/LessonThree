@@ -16,12 +16,14 @@ public class CacheInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
         if (method.isAnnotationPresent(Cache.class)) {
-            var objHashCode = object.hashCode();
+            var paramsWithMethod = new ParamsWithMethod(method, args);
+            var objAndMethodHashCode = object.hashCode() + paramsWithMethod.hashCode();
 
             if (!cacheTableObject.isEmpty()) {
-                if (cacheTableObject.containsKey(objHashCode)) {
-                    var objFromCache = cacheTableObject.get(objHashCode);
+                if (cacheTableObject.containsKey(objAndMethodHashCode)) {
+                    var objFromCache = cacheTableObject.get(objAndMethodHashCode);
 
                     if (objFromCache.getObject().equals(object)) {
                         var cache = method.getAnnotation(Cache.class);
@@ -31,13 +33,26 @@ public class CacheInvocationHandler implements InvocationHandler {
                             return objFromCache.getMethodResult();
 
                         } else {
-                            cacheTableObject.remove(objHashCode);
+                            cacheTableObject.remove(objAndMethodHashCode);
+
+                            var thread = new Thread(){
+                                public void run(){
+                                    cacheTableObject.forEach((k, v) -> {
+                                                if (System.currentTimeMillis() - v.getLastUse() < cache.timeout()) {
+                                                    cacheTableObject.remove(k);
+                                                }
+                                            }
+                                    );
+                                }
+                            };
+                            thread.setPriority(Thread.MIN_PRIORITY);
+                            thread.start();
                         }
                     }
                 }
             }
             var methodResult = method.invoke(object, args);
-            cacheTableObject.putIfAbsent(objHashCode, new ObjectWithMethodResult(object, methodResult, System.currentTimeMillis()));
+            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, System.currentTimeMillis()));
 
             return methodResult;
         }
