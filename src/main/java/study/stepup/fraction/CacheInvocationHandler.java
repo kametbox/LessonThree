@@ -27,7 +27,7 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
                 if (cacheTableObject.containsKey(objAndMethodHashCode)) {
                     var objFromCache = cacheTableObject.get(objAndMethodHashCode);
 
-                    if (objFromCache.getObject().equals(object)) {
+                    if (objFromCache.getObject().equals(object) && paramsWithMethod.equals(objFromCache.getParamsWithMethod())) {
                         cacheTimeOut = method.getAnnotation(Cache.class).timeout();
 
                         if (System.currentTimeMillis() - objFromCache.getLastUse() < cacheTimeOut) {
@@ -42,7 +42,7 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
                 }
             }
             var methodResult = method.invoke(object, args);
-            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, System.currentTimeMillis()));
+            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, System.currentTimeMillis(), paramsWithMethod));
 
             return methodResult;
         }

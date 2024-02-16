@@ -4,11 +4,13 @@ public class ObjectWithMethodResult {
     private Object object;
     private Object methodResult;
     private long lastUse;
+    private ParamsWithMethod paramsWithMethod;
 
-    public ObjectWithMethodResult(Object object, Object methodResult, long lastUse) {
+    public ObjectWithMethodResult(Object object, Object methodResult, long lastUse, ParamsWithMethod paramsWithMethod) {
         this.object = object;
         this.methodResult = methodResult;
         this.lastUse = lastUse;
+        this.paramsWithMethod = paramsWithMethod;
     }
 
     public Object getObject() {
@@ -25,5 +27,9 @@ public class ObjectWithMethodResult {
 
     public void setLastUse(long lastUse) {
         this.lastUse = lastUse;
+    }
+
+    public ParamsWithMethod getParamsWithMethod() {
+        return paramsWithMethod;
     }
 }
