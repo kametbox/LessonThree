@@ -103,8 +103,8 @@ public class Lesson3Test {
         proxyNum.doubleValue();// sout молчит
 
         Thread.sleep(1500);
-        proxyNum.doubleValue();// sout сработал
-        var d = proxyNum.doubleValue();// sout молчит
+        proxyNum.doubleValue();// sout  сработал
+        var d = proxyNum.doubleValue();// sout  молчит
 
         assertEquals((double) 2/3, d);
         assertEquals(3, tFr.getCnt());
