@@ -4,10 +4,12 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class CacheInvocationHandler implements InvocationHandler {
+public class CacheInvocationHandler implements InvocationHandler, Runnable {
 
     private Object object;
     private ConcurrentHashMap<Integer,ObjectWithMethodResult> cacheTableObject;
+    private long cacheTimeOut = 0;
+    private boolean needClearCache = false;
 
     public CacheInvocationHandler(Object object) {
         this.object = object;
@@ -16,28 +18,31 @@ public class CacheInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+
         if (method.isAnnotationPresent(Cache.class)) {
-            var objHashCode = object.hashCode();
+            var paramsWithMethod = new ParamsWithMethod(method, args);
+            var objAndMethodHashCode = object.hashCode() + paramsWithMethod.hashCode();
 
             if (!cacheTableObject.isEmpty()) {
-                if (cacheTableObject.containsKey(objHashCode)) {
-                    var objFromCache = cacheTableObject.get(objHashCode);
+                if (cacheTableObject.containsKey(objAndMethodHashCode)) {
+                    var objFromCache = cacheTableObject.get(objAndMethodHashCode);
 
                     if (objFromCache.getObject().equals(object)) {
-                        var cache = method.getAnnotation(Cache.class);
+                        cacheTimeOut = method.getAnnotation(Cache.class).timeout();
 
-                        if (System.currentTimeMillis() - objFromCache.getLastUse() < cache.timeout()) {
+                        if (System.currentTimeMillis() - objFromCache.getLastUse() < cacheTimeOut) {
                             objFromCache.setLastUse(System.currentTimeMillis());
                             return objFromCache.getMethodResult();
 
                         } else {
-                            cacheTableObject.remove(objHashCode);
+                            needClearCache = true;
+                            //cacheTableObject.remove(objAndMethodHashCode);
                         }
                     }
                 }
             }
             var methodResult = method.invoke(object, args);
-            cacheTableObject.putIfAbsent(objHashCode, new ObjectWithMethodResult(object, methodResult, System.currentTimeMillis()));
+            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, System.currentTimeMillis()));
 
             return methodResult;
         }
@@ -45,5 +50,37 @@ public class CacheInvocationHandler implements InvocationHandler {
             cacheTableObject.clear();
         }
         return method.invoke(object, args);
+    }
+
+    @Override
+    public void run() {
+        long lastStart = System.currentTimeMillis();
+
+        do {
+            if(!Thread.interrupted()){
+                if (needClearCache || System.currentTimeMillis() - lastStart > cacheTimeOut) {
+                    clearCache();
+                    lastStart = System.currentTimeMillis();
+                }
+            } else {
+                return;
+            }
+
+            try{
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                return;
+            }
+        }
+        while (true);
+    }
+    public void clearCache() {
+        cacheTableObject.forEach((k, v) -> {
+                    if (System.currentTimeMillis() - v.getLastUse() < cacheTimeOut) {
+                        cacheTableObject.remove(k);
+                    }
+                }
+        );
+        needClearCache = false;
     }
 }
