@@ -10,10 +10,12 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
     private ConcurrentHashMap<Integer,ObjectWithMethodResult> cacheTableObject;
     private long cacheTimeOut = 0;
     private boolean needClearCache = false;
+    private TimeChecker timeChecker;
 
-    public CacheInvocationHandler(Object object) {
+    public CacheInvocationHandler(Object object, TimeChecker timeChecker) {
         this.object = object;
         this.cacheTableObject = new ConcurrentHashMap<>();
+        this.timeChecker = timeChecker;
     }
 
     @Override
@@ -30,8 +32,8 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
                     if (objFromCache.getObject().equals(object)) {
                         cacheTimeOut = method.getAnnotation(Cache.class).timeout();
 
-                        if (System.currentTimeMillis() - objFromCache.getLastUse() < cacheTimeOut) {
-                            objFromCache.setLastUse(System.currentTimeMillis());
+                        if (timeChecker.curTimeMill() - objFromCache.getLastUse() < cacheTimeOut) {
+                            objFromCache.setLastUse(timeChecker.curTimeMill());
                             return objFromCache.getMethodResult();
 
                         } else {
@@ -42,7 +44,7 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
                 }
             }
             var methodResult = method.invoke(object, args);
-            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, System.currentTimeMillis()));
+            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, timeChecker.curTimeMill()));
 
             return methodResult;
         }
@@ -54,13 +56,13 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
 
     @Override
     public void run() {
-        long lastStart = System.currentTimeMillis();
+        long lastStart = timeChecker.curTimeMill();
 
         do {
             if(!Thread.interrupted()){
-                if (needClearCache || System.currentTimeMillis() - lastStart > cacheTimeOut) {
+                if (needClearCache || timeChecker.curTimeMill() - lastStart > cacheTimeOut) {
                     clearCache();
-                    lastStart = System.currentTimeMillis();
+                    lastStart = timeChecker.curTimeMill();
                 }
             } else {
                 return;
@@ -76,7 +78,7 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
     }
     public void clearCache() {
         cacheTableObject.forEach((k, v) -> {
-                    if (System.currentTimeMillis() - v.getLastUse() < cacheTimeOut) {
+                    if (timeChecker.curTimeMill() - v.getLastUse() < cacheTimeOut) {
                         cacheTableObject.remove(k);
                     }
                 }

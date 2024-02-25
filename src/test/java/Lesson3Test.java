@@ -87,9 +87,10 @@ public class Lesson3Test {
     }
 
     @Test
-    public void runProxyTestFractWithDelay() throws InterruptedException {
+    public void runProxyTestFractWithDelay() {
         TestFraction tFr = new TestFraction(2,3);
-        Fractionable proxyNum = Utils.cache(tFr);
+        TestClock testClock = new TestClock(1L);
+        Fractionable proxyNum = Utils.cache(tFr,testClock);
 
         proxyNum.doubleValue();// sout сработал
         proxyNum.doubleValue();// sout молчит
@@ -102,7 +103,8 @@ public class Lesson3Test {
         proxyNum.doubleValue();// sout молчит
         proxyNum.doubleValue();// sout молчит
 
-        Thread.sleep(1500);
+        //Thread.sleep(1500);
+        testClock.setTime(1500L);
         proxyNum.doubleValue();// sout сработал
         var d = proxyNum.doubleValue();// sout молчит
 
