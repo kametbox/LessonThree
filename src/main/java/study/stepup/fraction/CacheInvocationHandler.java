@@ -29,7 +29,7 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
                 if (cacheTableObject.containsKey(objAndMethodHashCode)) {
                     var objFromCache = cacheTableObject.get(objAndMethodHashCode);
 
-                    if (objFromCache.getObject().equals(object)) {
+                    if (paramsWithMethod.equals(objFromCache.getParamsWithMethod()) && objFromCache.getObject().equals(object)) {
                         cacheTimeOut = method.getAnnotation(Cache.class).timeout();
 
                         if (timeChecker.curTimeMill() - objFromCache.getLastUse() < cacheTimeOut) {
@@ -38,13 +38,12 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
 
                         } else {
                             needClearCache = true;
-                            //cacheTableObject.remove(objAndMethodHashCode);
                         }
                     }
                 }
             }
             var methodResult = method.invoke(object, args);
-            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, timeChecker.curTimeMill()));
+            cacheTableObject.put(objAndMethodHashCode, new ObjectWithMethodResult(object, methodResult, paramsWithMethod, timeChecker.curTimeMill()));
 
             return methodResult;
         }
