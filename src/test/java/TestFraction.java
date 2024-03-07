@@ -24,7 +24,7 @@ public class TestFraction implements Fractionable {
     }
     @Override
     public double doubleValue(){
-        System.out.println("invoke double value");
+        System.out.println("выполняется реальный расчет метода");
         cnt++;
         return (double) num/denum;
     }

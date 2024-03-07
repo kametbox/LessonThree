@@ -34,6 +34,7 @@ public class CacheInvocationHandler implements InvocationHandler, Runnable {
 
                         if (timeChecker.curTimeMill() - objFromCache.getLastUse() < cacheTimeOut) {
                             objFromCache.setLastUse(timeChecker.curTimeMill());
+                            System.out.println("вывод из перехваченного рефлексией метода. расчета не было, значение взяли из кэша");
                             return objFromCache.getMethodResult();
 
                         } else {

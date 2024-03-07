@@ -92,21 +92,21 @@ public class Lesson3Test {
         TestClock testClock = new TestClock(1L);
         Fractionable proxyNum = Utils.cache(tFr,testClock);
 
-        proxyNum.doubleValue();// sout сработал
-        proxyNum.doubleValue();// sout молчит
+        System.out.print("1"); proxyNum.doubleValue();// sout сработал
+        System.out.print("2"); proxyNum.doubleValue();// sout молчит
 
         proxyNum.setNum(5);
-        proxyNum.doubleValue();// sout сработал
-        proxyNum.doubleValue();// sout молчит
+        System.out.print("3"); proxyNum.doubleValue();// sout сработал
+        System.out.print("4"); proxyNum.doubleValue();// sout молчит
 
         proxyNum.setNum(2);
-        proxyNum.doubleValue();// sout молчит
-        proxyNum.doubleValue();// sout молчит
+        System.out.print("5"); proxyNum.doubleValue();// sout молчит
+        System.out.print("6"); proxyNum.doubleValue();// sout молчит
 
         //Thread.sleep(1500);
         testClock.setTime(1500L);
-        proxyNum.doubleValue();// sout сработал
-        var d = proxyNum.doubleValue();// sout молчит
+        System.out.print("7"); proxyNum.doubleValue();// sout сработал
+        System.out.print("8"); var d = proxyNum.doubleValue();// sout молчит
 
         assertEquals((double) 2/3, d);
         assertEquals(3, tFr.getCnt());
